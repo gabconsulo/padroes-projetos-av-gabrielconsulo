@@ -1,0 +1,235 @@
+@startuml
+title Questão 2 - Observer + Strategy + Decorator
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam nodesep 35
+skinparam ranksep 55
+skinparam classBackgroundColor #FFFFFF
+skinparam ArrowColor #333333
+skinparam NoteBackgroundColor #FFF8DC
+
+class Main {
+  + {static} main(args: String[]): void
+}
+
+' ================= LOTE (Subject + Context) =================
+class Lote <<final>> <<Subject>> <<Context>> {
+  - nome: String
+  - precoInicial: BigDecimal
+  - precoReserva: BigDecimal
+  - lanceAtual: BigDecimal
+  - estado: EstadoLote
+  - interessados: List<Interessado>
+  - regraComissao: RegraComissao
+  + acompanhar(i: Interessado): void
+  + deixarDeAcompanhar(i: Interessado): void
+  + darLance(autor: Licitante, valor: BigDecimal): ResultadoLance
+  + trocarRegraComissao(r: RegraComissao): void
+  + encerrar(): Optional<Venda>
+}
+
+enum EstadoLote {
+  ABERTO
+  VENDIDO
+  NAO_VENDIDO
+}
+
+class ResultadoLance <<record>> {
+  + aceito: boolean
+  + mensagem: String
+}
+
+class Lance <<record>> {
+  + nomeLote: String
+  + autor: Licitante
+  + valor: BigDecimal
+  + dataHora: LocalDateTime
+}
+
+class Venda <<record>> {
+  + nomeLote: String
+  + categoria: String
+  + comprador: String
+  + valorVenda: BigDecimal
+  + comissao: BigDecimal
+  + valorLiquido(): BigDecimal
+}
+
+' ================= OBSERVER =================
+interface Licitante {
+  + getNome(): String
+}
+
+interface Interessado <<Observer>> {
+  + atualizar(lance: Lance): void
+}
+
+class Participante <<final>> <<ConcreteObserver>> {
+  - nome: String
+  + darLance(lote: Lote, valor: BigDecimal): ResultadoLance
+  + atualizar(lance: Lance): void
+  + getNome(): String
+}
+
+class PainelLeiloeiro <<final>> <<ConcreteObserver>> {
+  - maiorLancePorLote: Map<String, BigDecimal>
+  - totalPorLote: Map<String, Integer>
+  + atualizar(lance: Lance): void
+  + getTotalLances(nomeLote: String): int
+}
+
+class Auditor <<final>> <<ConcreteObserver>> {
+  - registros: List<Lance>
+  + atualizar(lance: Lance): void
+  + getRegistros(): List<Lance>
+}
+
+' ================= STRATEGY =================
+interface Categoria {
+  + getNome(): String
+  + getRegraPadrao(): RegraComissao
+}
+
+class CategoriaArte <<final>>
+class CategoriaVeiculos <<final>>
+class CategoriaImoveis <<final>>
+class CategoriaEletronicos <<final>>
+
+interface RegraComissao <<Strategy>> {
+  + calcular(valorVenda: BigDecimal): BigDecimal
+  + getDescricao(): String
+}
+
+class ComissaoArte <<final>> <<ConcreteStrategy>> {
+  20% do valor
+}
+class ComissaoVeiculos <<final>> <<ConcreteStrategy>> {
+  8%, limite R$ 5.000,00
+}
+class ComissaoImoveis <<final>> <<ConcreteStrategy>> {
+  3% + R$ 1.500,00 fixos
+}
+class ComissaoEletronicos <<final>> <<ConcreteStrategy>> {
+  12%, mínimo R$ 50,00
+}
+
+class AcertoVendedor <<final>> {
+  + {static} imprimir(venda: Venda): void
+}
+
+' ================= DECORATOR =================
+interface Fatura <<Component>> {
+  + getValorVenda(): BigDecimal
+  + getItens(): List<ItemFatura>
+  + getTotal(): BigDecimal
+}
+
+class ItemFatura <<record>> {
+  + descricao: String
+  + valor: BigDecimal
+}
+
+class FaturaVenda <<final>> <<ConcreteComponent>> {
+  - venda: Venda {readOnly}
+}
+
+abstract class ServicoAdicional <<Decorator>> {
+  - fatura: Fatura {readOnly}
+  # {abstract} getDescricaoServico(): String
+  # {abstract} calcularCusto(valorVenda: BigDecimal): BigDecimal
+}
+
+class SeguroTransporte <<final>> <<ConcreteDecorator>> {
+  1,5% do valor de venda
+}
+class CertificadoAutenticidade <<final>> <<ConcreteDecorator>> {
+  R$ 300,00
+}
+class EmbalagemEspecial <<final>> <<ConcreteDecorator>> {
+  R$ 180,00
+}
+class EntregaExpressa <<final>> <<ConcreteDecorator>> {
+  R$ 450,00
+}
+
+class ImpressoraFatura <<final>> {
+  + {static} imprimir(fatura: Fatura): void
+}
+
+' ================= RELACIONAMENTOS =================
+Main ..> Lote : cria
+Main ..> Participante : cria
+Main ..> PainelLeiloeiro : cria
+Main ..> Auditor : cria
+Main ..> FaturaVenda : cria
+Main ..> ServicoAdicional : empilha
+Main ..> ImpressoraFatura
+Main ..> AcertoVendedor
+
+' Observer
+Lote o--> "*" Interessado : interessados
+Lote ..> Licitante
+Lote ..> Lance : cria e notifica
+Lote ..> ResultadoLance
+Lote --> EstadoLote
+Lance --> Licitante : autor
+Interessado ..> Lance
+Interessado <|.. Participante
+Interessado <|.. PainelLeiloeiro
+Interessado <|.. Auditor
+Licitante <|.. Participante
+Participante ..> Lote : darLance
+
+' Strategy
+Lote --> "1" RegraComissao : regraComissao
+Lote --> "1" Categoria
+Categoria ..> RegraComissao : regra padrão
+Categoria <|.. CategoriaArte
+Categoria <|.. CategoriaVeiculos
+Categoria <|.. CategoriaImoveis
+Categoria <|.. CategoriaEletronicos
+RegraComissao <|.. ComissaoArte
+RegraComissao <|.. ComissaoVeiculos
+RegraComissao <|.. ComissaoImoveis
+RegraComissao <|.. ComissaoEletronicos
+CategoriaArte ..> ComissaoArte
+CategoriaVeiculos ..> ComissaoVeiculos
+CategoriaImoveis ..> ComissaoImoveis
+CategoriaEletronicos ..> ComissaoEletronicos
+Lote ..> Venda : cria ao encerrar
+AcertoVendedor ..> Venda
+
+' Decorator
+Fatura <|.. FaturaVenda
+Fatura <|.. ServicoAdicional
+ServicoAdicional o--> "1" Fatura : embrulha
+ServicoAdicional <|-- SeguroTransporte
+ServicoAdicional <|-- CertificadoAutenticidade
+ServicoAdicional <|-- EmbalagemEspecial
+ServicoAdicional <|-- EntregaExpressa
+FaturaVenda ..> Venda
+Fatura ..> ItemFatura
+ImpressoraFatura ..> Fatura
+
+note right of Interessado
+  RNF01: Observer. O Lote só conhece
+  Interessado e Licitante. Novo tipo de
+  interessado = classe nova.
+end note
+
+note right of RegraComissao
+  RNF02: Strategy. Sem if/switch por categoria;
+  a troca (RF07) é feita em tempo de execução.
+end note
+
+note right of Fatura
+  RNF03/04: Decorator. Serviços combináveis em
+  qualquer ordem e quantidade; a impressora trata
+  todas as faturas igual.
+end note
+
+note bottom of Lote
+  RNF05: as três estruturas não se conhecem.
+  Observer, Strategy e Decorator evoluem separadamente.
+end note
+@enduml
