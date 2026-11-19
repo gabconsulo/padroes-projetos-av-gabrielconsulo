@@ -1,4 +1,4 @@
-Autor: Gabriel Ravaglio Consulo — Universidade Positivo
+Autor: Gabriel Ravaglio Consulo - Universidade Positivo
 
 | Questão | Padrões | Requisitos | Por quê |
 |---|---|---|---|
