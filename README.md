@@ -1,10 +1,8 @@
-# Padrões de Projeto — AV
-
 Autor: Gabriel Ravaglio Consulo — Universidade Positivo
 
 | Questão | Padrões | Requisitos | Por quê |
 |---|---|---|---|
-| 1 — Provisionamento Multinuvem | **Abstract Factory** | RNF01, RNF02, RNF03, RNF06 | `FabricaNuvem` cria a família `MaquinaVirtual` + `Armazenamento` + `Fila` de um único provedor. `Ambiente` recebe uma fábrica de fora, então não conhece provedor concreto, não usa `if`/`switch` e nunca mistura provedores. Um novo provedor exige só classes novas (e o registro em `SeletorProvedor`). |
+| 1. Provisionamento Multinuvem | **Abstract Factory** | RNF01, RNF02, RNF03, RNF06 | `FabricaNuvem` cria a família `MaquinaVirtual` + `Armazenamento` + `Fila` de um único provedor. `Ambiente` recebe uma fábrica de fora, então não conhece provedor concreto, não usa `if`/`switch` e nunca mistura provedores. Um novo provedor exige só classes novas (e o registro em `SeletorProvedor`). |
 | | **Singleton** | RNF04 | `Configuracao` lê o `config.properties` uma única vez (inicialização sob demanda, thread-safe) e é acessada por `getInstance()`. |
 | | **Singleton** (thread-safe) | RNF05 | `HistoricoAuditoria` é único, acessível sem parâmetro e com métodos sincronizados: provisionamentos simultâneos não perdem nem corrompem registros, e a ordem é preservada. |
 | 2 — Casa de Leilões Online | **Observer** | RNF01 | `Lote` (Subject) só conhece `Interessado` e `Licitante`. Participante, painel e auditor entram e saem em tempo de execução; um novo interessado é só uma classe nova. |
